@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guitar Hero MIDI Practice</title>
+    <meta name="description" content="Guitar Hero-style MIDI practice app for learning piano">
+    <meta name="theme-color" content="#0a0a12">
+    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="guitar_hero.css">
+</head>
+<body>
+    <div id="controls-panel">
+        <div class="controls-row">
+            <div class="control-group">
+                <label for="midi-file">Load MIDI:</label>
+                <input type="file" id="midi-file" accept=".mid,.midi">
+            </div>
+            <div class="control-group">
+                <button id="btn-start" disabled>Start</button>
+                <button id="btn-pause" disabled>Pause</button>
+                <button id="btn-stop" disabled>Stop</button>
+            </div>
+            <div class="control-group">
+                <label for="mode-select">Mode:</label>
+                <select id="mode-select">
+                    <option value="normal">Normal</option>
+                    <option value="practice">Practice</option>
+                    <option value="reading">Reading</option>
+                </select>
+            </div>
+            <div class="control-group" id="bpm-group">
+                <label for="bpm-slider">BPM: <span id="bpm-display">120</span></label>
+                <input type="range" id="bpm-slider" min="20" max="300" value="120">
+            </div>
+            <div class="control-group">
+                <label for="metronome-toggle" class="toggle-label">
+                    <input type="checkbox" id="metronome-toggle">
+                    Metronome
+                </label>
+            </div>
+            <div class="control-group">
+                <label>Time Sig:</label>
+                <input type="number" id="ts-numerator" min="1" max="16" value="4" class="ts-input">
+                <span class="ts-slash">/</span>
+                <select id="ts-denominator" class="ts-input">
+                    <option value="2">2</option>
+                    <option value="4" selected>4</option>
+                    <option value="8">8</option>
+                    <option value="16">16</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label>Octave:</label>
+                <button id="btn-octave-down" title="Shift notes down one octave">▼</button>
+                <span id="octave-shift-display">0</span>
+                <button id="btn-octave-up" title="Shift notes up one octave">▲</button>
+            </div>
+            <div class="control-group">
+                <button id="btn-note-remap" disabled title="Remap individual notes to different octaves">Note Remap</button>
+            </div>
+            <div class="control-group">
+                <label for="sheet-music-toggle" class="toggle-label">
+                    <input type="checkbox" id="sheet-music-toggle">
+                    Sheet Music
+                </label>
+            </div>
+            <div class="control-group">
+                <label for="audio-playback-toggle" class="toggle-label">
+                    <input type="checkbox" id="audio-playback-toggle">
+                    Sound
+                </label>
+                <input type="range" id="audio-volume" min="0" max="1" step="0.1" value="0.5" class="vol-slider" title="Volume">
+            </div>
+            <div class="control-group stats">
+                <span>Score: <strong id="score-display">0</strong></span>
+                <span>Combo: <strong id="combo-display">0</strong></span>
+            </div>
+            <div class="control-group">
+                <button id="btn-library" title="Song Library — view your practice history">📚 Library</button>
+                <button id="btn-stats" title="Statistics Dashboard — view overall practice stats">📊 Stats</button>
+                <button id="btn-training" title="Training Center — ear training, arpeggios, chords, music theory">🎓 Training</button>
+            </div>
+            <div class="control-group">
+                <button id="btn-mic-toggle" title="Enable microphone for acoustic piano input">🎤 Mic</button>
+                <button id="btn-mic-calibrate" disabled title="Calibrate microphone pitch detection">Calibrate</button>
+                <span id="mic-status" class="status-disconnected">Mic: Off</span>
+            </div>
+            <div class="control-group">
+                <span id="midi-status" class="status-disconnected">MIDI: No device</span>
+            </div>
+        </div>
+    </div>
+    <div id="timeline-panel">
+        <canvas id="timeline-canvas"></canvas>
+        <div id="timeline-info">
+            <span id="timeline-pos">0:00</span> / <span id="timeline-dur">0:00</span>
+            <span id="timeline-step" class="hidden"></span>
+            <span class="loop-controls">
+                <button id="btn-loop-a" title="Set loop start (A) at current position">A</button>
+                <button id="btn-loop-b" title="Set loop end (B) at current position">B</button>
+                <button id="btn-loop-clear" title="Clear loop points">✕</button>
+                <span id="loop-info" class="hidden"></span>
+            </span>
+        </div>
+    </div>
+    <canvas id="sheet-canvas" class="hidden"></canvas>
+    <canvas id="game-canvas"></canvas>
+    <div id="no-file-message">
+        <h2>🎸 Guitar Hero MIDI Practice</h2>
+        <p>Load a MIDI file to get started</p>
+        <p class="hint">Connect a MIDI keyboard or use computer keys (A-L, W-U) to play</p>
+        <p class="hint shortcuts">Shortcuts: <kbd>Space</kbd> Start/Pause · <kbd>Esc</kbd> Stop</p>
+    </div>
+    <!-- Note Remap Panel -->
+    <div id="remap-overlay" class="hidden">
+        <div id="remap-panel">
+            <h3>Note Remap</h3>
+            <p class="remap-desc">Shift specific notes to a different octave</p>
+            <div id="remap-add-row">
+                <select id="remap-source"></select>
+                <span class="remap-arrow">→</span>
+                <select id="remap-target"></select>
+                <button id="btn-remap-add">Add</button>
+            </div>
+            <div id="remap-list"></div>
+            <div class="remap-actions">
+                <button id="btn-remap-clear">Clear All</button>
+                <button id="btn-remap-close">Close</button>
+            </div>
+        </div>
+    </div>
+    <!-- Song Library Panel -->
+    <div id="library-overlay" class="hidden overlay-panel">
+        <div class="overlay-content">
+            <div class="overlay-header">
+                <h3>📚 Song Library</h3>
+                <button class="overlay-close" onclick="this.closest('.overlay-panel').classList.add('hidden')">✕</button>
+            </div>
+            <div id="library-list"></div>
+        </div>
+    </div>
+    <!-- Statistics Dashboard Panel -->
+    <div id="stats-overlay" class="hidden overlay-panel">
+        <div class="overlay-content">
+            <div class="overlay-header">
+                <h3>📊 Practice Statistics</h3>
+                <button class="overlay-close" onclick="this.closest('.overlay-panel').classList.add('hidden')">✕</button>
+            </div>
+            <div id="stats-content"></div>
+        </div>
+    </div>
+    <!-- Microphone Calibration Panel -->
+    <div id="calibration-overlay" class="hidden overlay-panel">
+        <div class="overlay-content calibration-content">
+            <div class="overlay-header">
+                <h3>🎤 Microphone Calibration</h3>
+                <button class="overlay-close" onclick="this.closest('.overlay-panel').classList.add('hidden')">✕</button>
+            </div>
+            <p class="cal-instructions">Select a reference note and play it on your acoustic piano. Hold the note steady for about half a second.</p>
+            <div class="cal-note-row">
+                <label for="cal-note-select">Reference Note:</label>
+                <select id="cal-note-select">
+                    <option value="60">C4 (Middle C)</option>
+                    <option value="69" selected>A4 (440 Hz)</option>
+                    <option value="72">C5</option>
+                    <option value="48">C3</option>
+                    <option value="57">A3</option>
+                    <option value="81">A5</option>
+                </select>
+            </div>
+            <div class="cal-progress-bar">
+                <div id="cal-progress"></div>
+            </div>
+            <p id="cal-status" class="cal-status">Play the selected note on your piano...</p>
+        </div>
+    </div>
+    <script src="training.js"></script>
+    <script src="guitar_hero.js"></script>
+    <script>
+        // Register service worker for PWA / offline support
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js').catch(() => {});
+        }
+    </script>
+</body>
+</html>
