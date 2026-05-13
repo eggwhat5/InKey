@@ -1,6 +1,6 @@
 # Guitar Hero MIDI Practice
 
-A Guitar Hero 3–style falling-notes practice application for learning piano. Load any standard MIDI file, watch the notes descend from the top of the screen to a hit line at the bottom, and play along on your MIDI keyboard. Get real-time feedback on your timing — perfect, good, early, late, or miss — with visual icons and scoring.
+A Guitar Hero 3–style falling-notes practice application for learning piano. Load any standard MIDI file, watch the notes descend from the top of the screen to a hit line at the bottom, and play along on your MIDI keyboard. Get real-time feedback on your timing (perfect, good, early, late, or miss) with visual icons and scoring.
 
 No server, no installation, no dependencies. Just open `guitar_hero.html` in a modern browser.
 
